@@ -181,7 +181,8 @@ jobs:
       - name: Download all artifacts
         uses: actions/download-artifact@v4
         with:
-          path: artifacts
+          name: artifacts
+          path: distfiles
 
       - name: Read Cargo.toml version
         id: cargo
@@ -189,12 +190,12 @@ jobs:
           VERSION=$(grep '^version' Cargo.toml | sed -E 's/version = "(.*)"/\1/')
           echo "version=$VERSION" >> $GITHUB_OUTPUT
 
-      # Upload all files from artifacts directory
+      # Upload all files from distfiles directory
       - name: Upload all build outputs to release
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}      # default token works for upload
-          file: artifacts/**/*
+          file: distfiles/*
           tag: ${{ steps.cargo.outputs.version }}
           overwrite: true
 
