@@ -113,7 +113,12 @@ jobs:
           echo "MACOSX_DEPLOYMENT_TARGET=11.0" >> $GITHUB_ENV
 
       - name: Build
-        run: cross build --release --target ${{ matrix.target }}
+        run: |
+          if [[ "${{ matrix.target }}" == *"apple"* ]]; then
+            cargo build --release --target ${{ matrix.target }}
+          else
+            cross build --release --target ${{ matrix.target }}
+          fi
 
       - name: Rename output
         run: |
