@@ -10,52 +10,33 @@ jobs:
     strategy:
       matrix:
         include:
-          # Windows desktop
           - target: x86_64-pc-windows-msvc
             ext: dll
             os: windows-latest
-
-          # Linux desktop
           - target: x86_64-unknown-linux-gnu
             ext: so
             os: ubuntu-latest
-
-          # macOS Intel
           - target: x86_64-apple-darwin
             ext: dylib
             os: macos-latest
-
-          # macOS Apple Silicon
           - target: aarch64-apple-darwin
             ext: dylib
             os: macos-latest
-
-          # iOS device
           - target: aarch64-apple-ios
             ext: dylib
             os: macos-latest
-
-          # iOS simulator
           - target: x86_64-apple-ios
             ext: dylib
             os: macos-latest
-
-          # Android arm64
           - target: aarch64-linux-android
             ext: so
             os: ubuntu-latest
-
-          # Android armv7
           - target: armv7-linux-androideabi
             ext: so
             os: ubuntu-latest
-
-          # Android x86
           - target: i686-linux-android
             ext: so
             os: ubuntu-latest
-
-          # Android x86_64
           - target: x86_64-linux-android
             ext: so
             os: ubuntu-latest
@@ -90,39 +71,48 @@ jobs:
         with:
           targets: ${{ matrix.target }}
 
-
-      # Android NDK setup
       - name: Setup Android NDK
         if: contains(matrix.target, 'android')
         uses: nttld/setup-ndk@v1
         with:
           ndk-version: r26d
 
-      # iOS setup
       - name: Setup iOS toolchain
         if: contains(matrix.target, 'apple-ios')
         run: rustup target add ${{ matrix.target }}
 
-      # Apple deployment targets
       - name: Set Apple deployment targets
         if: contains(matrix.target, 'apple')
+        shell: bash
         run: |
           echo "IPHONEOS_DEPLOYMENT_TARGET=12.0" >> $GITHUB_ENV
           echo "MACOSX_DEPLOYMENT_TARGET=11.0" >> $GITHUB_ENV
 
-      - name: Build
-        run: |
-          if [[ "${{ matrix.target }}" == *"apple"* ]]; then
-            cargo build --release --target ${{ matrix.target }}
-          else
-            cargo install cross 
-            cross build --release --target ${{ matrix.target }}
-          fi
+      - name: Build (Apple)
+        if: contains(matrix.target, 'apple')
+        run: cargo build --release --target ${{ matrix.target }}
 
-      - name: Rename output
+      - name: Build (Cross)
+        if: "!contains(matrix.target, 'apple')"
+        run: |
+          cargo install cross
+          cross build --release --target ${{ matrix.target }}
+
+      # Rename step for Linux/macOS
+      - name: Rename output (Unix)
+        if: runner.os != 'Windows'
+        shell: bash
         run: |
           mkdir -p artifacts
           cp target/${{ matrix.target }}/release/*.${{ matrix.ext }} artifacts/${{ env.filename }}-${{ matrix.target }}.${{ matrix.ext }}
+
+      # Rename step for Windows
+      - name: Rename output (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path artifacts
+          Copy-Item "target\${{ matrix.target }}\release\*.${{ matrix.ext }}" "artifacts\${{ env.filename }}-${{ matrix.target }}.${{ matrix.ext }}"
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
