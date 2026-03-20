@@ -10,33 +10,52 @@ jobs:
     strategy:
       matrix:
         include:
+          # Windows desktop
           - target: x86_64-pc-windows-msvc
             ext: dll
             os: windows-latest
+
+          # Linux desktop
           - target: x86_64-unknown-linux-gnu
             ext: so
             os: ubuntu-latest
+
+          # macOS Intel
           - target: x86_64-apple-darwin
             ext: dylib
             os: macos-latest
+
+          # macOS Apple Silicon
           - target: aarch64-apple-darwin
             ext: dylib
             os: macos-latest
+
+          # iOS device
           - target: aarch64-apple-ios
             ext: dylib
             os: macos-latest
+
+          # iOS simulator
           - target: x86_64-apple-ios
             ext: dylib
             os: macos-latest
+
+          # Android arm64
           - target: aarch64-linux-android
             ext: so
             os: ubuntu-latest
+
+          # Android armv7
           - target: armv7-linux-androideabi
             ext: so
             os: ubuntu-latest
+
+          # Android x86
           - target: i686-linux-android
             ext: so
             os: ubuntu-latest
+
+          # Android x86_64
           - target: x86_64-linux-android
             ext: so
             os: ubuntu-latest
