@@ -20,58 +20,58 @@ jobs:
             ext: dll
             os: windows-latest
 
-          # # Linux desktop
-          # - target: x86_64-unknown-linux-gnu
-          #   ext: so
-          #   os: ubuntu-latest
+          # Linux desktop
+          - target: x86_64-unknown-linux-gnu
+            ext: so
+            os: ubuntu-latest
 
-          # # macOS Intel
-          # - target: x86_64-apple-darwin
-          #   ext: dylib
-          #   os: macos-latest
+          # macOS Intel
+          - target: x86_64-apple-darwin
+            ext: dylib
+            os: macos-latest
 
-          # # macOS Apple Silicon
-          # - target: aarch64-apple-darwin
-          #   ext: dylib
-          #   os: macos-latest
+          # macOS Apple Silicon
+          - target: aarch64-apple-darwin
+            ext: dylib
+            os: macos-latest
 
-          # # iOS device
-          # - target: aarch64-apple-ios
-          #   ext: dylib
-          #   os: macos-latest
+          # iOS device
+          - target: aarch64-apple-ios
+            ext: dylib
+            os: macos-latest
 
-          # # iOS simulator
-          # - target: x86_64-apple-ios
-          #   ext: dylib
-          #   os: macos-latest
+          # iOS simulator
+          - target: x86_64-apple-ios
+            ext: dylib
+            os: macos-latest
 
-          # # Android arm64
-          # - target: aarch64-linux-android
-          #   ext: so
-          #   os: ubuntu-latest
-          #   envkey: AARCH64_LINUX_ANDROID
-          #   linker: aarch64-linux-android21-clang
+          # Android arm64
+          - target: aarch64-linux-android
+            ext: so
+            os: ubuntu-latest
+            envkey: AARCH64_LINUX_ANDROID
+            linker: aarch64-linux-android21-clang
 
-          # # Android armv7
-          # - target: armv7-linux-androideabi
-          #   ext: so
-          #   os: ubuntu-latest
-          #   envkey: ARMV7_LINUX_ANDROIDEABI
-          #   linker: armv7a-linux-androideabi21-clang
+          # Android armv7
+          - target: armv7-linux-androideabi
+            ext: so
+            os: ubuntu-latest
+            envkey: ARMV7_LINUX_ANDROIDEABI
+            linker: armv7a-linux-androideabi21-clang
 
-          # # Android x86
-          # - target: i686-linux-android
-          #   ext: so
-          #   os: ubuntu-latest
-          #   envkey: I686_LINUX_ANDROID
-          #   linker: i686-linux-android21-clang
+          # Android x86
+          - target: i686-linux-android
+            ext: so
+            os: ubuntu-latest
+            envkey: I686_LINUX_ANDROID
+            linker: i686-linux-android21-clang
 
-          # # Android x86_64
-          # - target: x86_64-linux-android
-          #   ext: so
-          #   os: ubuntu-latest
-          #   envkey: X86_64_LINUX_ANDROID
-          #   linker: x86_64-linux-android21-clang
+          # Android x86_64
+          - target: x86_64-linux-android
+            ext: so
+            os: ubuntu-latest
+            envkey: X86_64_LINUX_ANDROID
+            linker: x86_64-linux-android21-clang
 
     runs-on: ${{ matrix.os }}
     
@@ -202,6 +202,7 @@ jobs:
           tag: ${{ steps.cargo.outputs.version }}
           overwrite: true
           file_glob: true
+          draft: true
 
 
 
