@@ -52,7 +52,7 @@ jobs:
             ext: so
             os: ubuntu-latest
             envkey: ARMV7_LINUX_ANDROIDEABI
-            linker: armv7a-linux-androideabi16-clang   # correct binary name
+            linker: armv7a-linux-androideabi21-clang
 
           # Android x86
           - target: i686-linux-android
