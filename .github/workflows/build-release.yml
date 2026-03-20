@@ -112,6 +112,13 @@ jobs:
         if: contains(matrix.target, 'apple-ios')
         run: rustup target add ${{ matrix.target }}
 
+      # Set deployment targets for Apple builds
+      - name: Set Apple deployment targets
+        if: contains(matrix.target, 'apple')
+        run: |
+          echo "IPHONEOS_DEPLOYMENT_TARGET=12.0" >> $GITHUB_ENV
+          echo "MACOSX_DEPLOYMENT_TARGET=11.0" >> $GITHUB_ENV
+
       - name: Build
         run: |
           if [[ "${{ matrix.target }}" == *"apple"* ]]; then
