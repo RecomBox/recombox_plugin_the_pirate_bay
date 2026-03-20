@@ -55,7 +55,7 @@ jobs:
             ext: so
             os: ubuntu-latest
 
-          # Android x86_64
+          # Android x86_64 (panic=abort required)
           - target: x86_64-linux-android
             ext: so
             os: ubuntu-latest
@@ -106,6 +106,11 @@ jobs:
         run: |
           echo "IPHONEOS_DEPLOYMENT_TARGET=12.0" >> $GITHUB_ENV
           echo "MACOSX_DEPLOYMENT_TARGET=11.0" >> $GITHUB_ENV
+
+      # Special case: Android x86_64 needs panic=abort
+      - name: Set panic=abort for Android x86_64
+        if: matrix.target == 'x86_64-linux-android'
+        run: echo "RUSTFLAGS=-C panic=abort" >> $GITHUB_ENV
 
       - name: Build (Apple)
         if: contains(matrix.target, 'apple')
