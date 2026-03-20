@@ -173,14 +173,33 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
       - name: Download artifacts
         uses: actions/download-artifact@v4
         with:
           path: artifacts
 
-      - name: Create GitHub Release
+      - name: Read Cargo.toml version
+        id: cargo
+        run: |
+          VERSION=$(grep '^version' Cargo.toml | sed -E 's/version = "(.*)"/\1/')
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Create Git tag
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag ${{ steps.cargo.outputs.version }}
+          git push origin ${{ steps.cargo.outputs.version }}
+
+      - name: Create GitHub Draft Release
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ steps.cargo.outputs.version }}
           files: artifacts/**/*
+          draft: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
