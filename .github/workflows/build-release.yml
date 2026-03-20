@@ -172,11 +172,13 @@ jobs:
   release:
     needs: build
     runs-on: ubuntu-latest
+    permissions:
+      contents: write 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Download artifacts
+      - name: Download all artifacts
         uses: actions/download-artifact@v4
         with:
           path: artifacts
@@ -187,14 +189,14 @@ jobs:
           VERSION=$(grep '^version' Cargo.toml | sed -E 's/version = "(.*)"/\1/')
           echo "version=$VERSION" >> $GITHUB_OUTPUT
 
-      - name: Create GitHub Draft Release
-        uses: softprops/action-gh-release@v2
+      # Upload all files from artifacts directory
+      - name: Upload all build outputs to release
+        uses: svenstaro/upload-release-action@v2
         with:
-          tag_name: ${{ steps.cargo.outputs.version }}
-          files: artifacts/**/*
-          draft: true
-        env:
-          GITHUB_TOKEN: ${{ secrets.ORG_PAT_TOKEN }}   # use org‑level PAT
+          repo_token: ${{ secrets.GITHUB_TOKEN }}      # default token works for upload
+          file: artifacts/**/*
+          tag: ${{ steps.cargo.outputs.version }}
+          overwrite: true
 
 
 
