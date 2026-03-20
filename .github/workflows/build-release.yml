@@ -14,59 +14,86 @@ jobs:
           - target: x86_64-pc-windows-msvc
             ext: dll
             os: windows-latest
+            env: {}
 
           # Linux
           - target: x86_64-unknown-linux-gnu
             ext: so
             os: ubuntu-latest
+            env:
+              CC: gcc-12
+              CXX: g++-12
 
           # macOS Intel
           - target: x86_64-apple-darwin
             ext: dylib
             os: macos-latest
+            env:
+              CC: clang
+              CXX: clang++
 
           # macOS Apple Silicon
           - target: aarch64-apple-darwin
             ext: dylib
             os: macos-latest
+            env:
+              CC: clang
+              CXX: clang++
 
           # iOS device
           - target: aarch64-apple-ios
             ext: dylib
             os: macos-latest
+            env:
+              CC: clang
+              CXX: clang++
 
           # iOS simulator
           - target: x86_64-apple-ios
             ext: dylib
             os: macos-latest
+            env:
+              CC: clang
+              CXX: clang++
 
           # Android arm64
           - target: aarch64-linux-android
             ext: so
             os: ubuntu-latest
+            env:
+              CC: gcc-12
+              CXX: g++-12
 
           # Android armv7
           - target: armv7-linux-androideabi
             ext: so
             os: ubuntu-latest
+            env:
+              CC: gcc-12
+              CXX: g++-12
 
           # Android x86
           - target: i686-linux-android
             ext: so
             os: ubuntu-latest
+            env:
+              CC: gcc-12
+              CXX: g++-12
 
           # Android x86_64
           - target: x86_64-linux-android
             ext: so
             os: ubuntu-latest
+            env:
+              CC: gcc-12
+              CXX: g++-12
 
     runs-on: ${{ matrix.os }}
     env:
       filename: lib_the_pirate_bay
       RUSTFLAGS: ""
-      # Default compiler settings per OS
-      CC: ${{ runner.os == 'Linux' && 'gcc-12' || runner.os == 'macOS' && 'clang' || '' }}
-      CXX: ${{ runner.os == 'Linux' && 'g++-12' || runner.os == 'macOS' && 'clang++' || '' }}
+      CC: ${{ matrix.env.CC }}
+      CXX: ${{ matrix.env.CXX }}
 
     steps:
       - name: Checkout
