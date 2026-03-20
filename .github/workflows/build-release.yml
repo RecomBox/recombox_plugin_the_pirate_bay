@@ -1,0 +1,86 @@
+name: Build and Release Rust Library
+
+on:
+  push:
+    branches:
+      - main   # run on every push to main
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        include:
+          - target: x86_64-pc-windows-msvc
+            ext: dll
+            os: windows-latest
+          - target: x86_64-unknown-linux-musl
+            ext: so
+            os: ubuntu-latest
+          - target: x86_64-apple-darwin
+            ext: dylib
+            os: macos-latest
+          - target: aarch64-linux-android
+            ext: so
+            os: ubuntu-latest
+          - target: aarch64-apple-ios
+            ext: dylib
+            os: macos-latest
+
+    runs-on: ${{ matrix.os }}
+    env:
+      filename: lib_the_pirate_bay
+      RUSTFLAGS: ""   # ensure no static CRT flags
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Install cross
+        run: cargo install cross --git https://github.com/cross-rs/cross
+
+      # Android NDK setup
+      - name: Setup Android NDK
+        if: matrix.target == 'aarch64-linux-android'
+        uses: nttld/setup-ndk@v1
+        with:
+          ndk-version: r26d
+
+      # iOS setup
+      - name: Setup iOS toolchain
+        if: matrix.target == 'aarch64-apple-ios'
+        run: rustup target add aarch64-apple-ios
+
+      - name: Build with cross
+        run: cross build --release --target ${{ matrix.target }}
+
+      - name: Rename output
+        run: |
+          mkdir -p artifacts
+          cp target/${{ matrix.target }}/release/*.${{ matrix.ext }} artifacts/${{ env.filename }}-${{ matrix.target }}.${{ matrix.ext }}
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.filename }}-${{ matrix.target }}
+          path: artifacts/${{ env.filename }}-${{ matrix.target }}.${{ matrix.ext }}
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: artifacts/**/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
