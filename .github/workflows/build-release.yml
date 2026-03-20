@@ -85,6 +85,13 @@ jobs:
           cache-targets: true
           cache-on-failure: true
 
+      # Install build dependencies on Linux
+      - name: Install Linux build dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential clang pkg-config libssl-dev cmake nasm
+
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
         with:
