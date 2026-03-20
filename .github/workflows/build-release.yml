@@ -1,4 +1,4 @@
-name: Build and Release FFI Library
+name: Build Flutter FFI Library
 
 on:
   push:
@@ -69,7 +69,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Cache rustup toolchains
+      - name: Cache Rust toolchains
         uses: actions/cache@v4
         with:
           path: |
@@ -84,25 +84,6 @@ jobs:
         with:
           cache-targets: true
           cache-on-failure: true
-
-      # Linux setup
-      - name: Install Linux build dependencies
-        if: runner.os == 'Linux'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y build-essential clang pkg-config libssl-dev cmake nasm
-          sudo apt-get install -y gcc-12 g++-12
-          sudo update-alternatives --install /usr/bin/cc cc /usr/bin/gcc-12 100
-          sudo update-alternatives --install /usr/bin/c++ c++ /usr/bin/g++-12 100
-          echo "CC=gcc-12" >> $GITHUB_ENV
-          echo "CXX=g++-12" >> $GITHUB_ENV
-
-      # macOS/iOS setup
-      - name: Set macOS/iOS compiler
-        if: runner.os == 'macOS'
-        run: |
-          echo "CC=clang" >> $GITHUB_ENV
-          echo "CXX=clang++" >> $GITHUB_ENV
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
@@ -132,12 +113,7 @@ jobs:
           echo "MACOSX_DEPLOYMENT_TARGET=11.0" >> $GITHUB_ENV
 
       - name: Build
-        run: |
-          if [[ "${{ matrix.target }}" == *"apple"* ]]; then
-            cargo build --release --target ${{ matrix.target }}
-          else
-            cross build --release --target ${{ matrix.target }}
-          fi
+        run: cross build --release --target ${{ matrix.target }}
 
       - name: Rename output
         run: |
