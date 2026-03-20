@@ -70,7 +70,7 @@ jobs:
 
     runs-on: ${{ matrix.os }}
     env:
-      filename: lib_flutter_plugin
+      filename: lib_the_pirate_bay
       ANDROID_NDK_VERSION: r26d
       ANDROID_API_LEVEL: 21
 
@@ -133,12 +133,17 @@ jobs:
           echo "IPHONEOS_DEPLOYMENT_TARGET=12.0" >> $GITHUB_ENV
           echo "MACOSX_DEPLOYMENT_TARGET=11.0" >> $GITHUB_ENV
 
+      # Build steps split by platform
       - name: Build (Apple)
         if: contains(matrix.target, 'apple')
         run: cargo build --release --target ${{ matrix.target }}
 
+      - name: Build (Linux)
+        if: contains(matrix.target, 'linux') && !contains(matrix.target, 'android')
+        run: cargo build --release --target ${{ matrix.target }}
+
       - name: Build (Cross)
-        if: "!contains(matrix.target, 'apple')"
+        if: "!contains(matrix.target, 'apple') && !(contains(matrix.target, 'linux') && !contains(matrix.target, 'android'))"
         run: |
           cargo install cross
           cross build --release --target ${{ matrix.target }}
