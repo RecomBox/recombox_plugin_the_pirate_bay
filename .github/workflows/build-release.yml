@@ -91,7 +91,7 @@ jobs:
           targets: ${{ matrix.target }}
 
       - name: Install cross
-        run: cargo install --force cross --git https://github.com/cross-rs/cross
+        run: cargo install cross 
 
       # Android NDK setup
       - name: Setup Android NDK
