@@ -3,7 +3,7 @@ name: Build and Release Rust Library
 on:
   push:
     branches:
-      - main   # run on every push to main
+      - main
 
 jobs:
   build:
@@ -63,9 +63,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     env:
       filename: lib_the_pirate_bay
-      RUSTFLAGS: ""   # ensure no static CRT flags
-      CC: gcc-12
-      CXX: g++-12
+      RUSTFLAGS: ""
 
     steps:
       - name: Checkout
@@ -96,6 +94,16 @@ jobs:
           sudo apt-get install -y gcc-12 g++-12
           sudo update-alternatives --install /usr/bin/cc cc /usr/bin/gcc-12 100
           sudo update-alternatives --install /usr/bin/c++ c++ /usr/bin/g++-12 100
+        env:
+          CC: gcc-12
+          CXX: g++-12
+
+      # Set compiler for macOS/iOS
+      - name: Set macOS/iOS compiler
+        if: runner.os == 'macOS'
+        run: |
+          echo "CC=clang" >> $GITHUB_ENV
+          echo "CXX=clang++" >> $GITHUB_ENV
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
