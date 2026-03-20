@@ -194,6 +194,7 @@ jobs:
           files: artifacts/**/*
           draft: true
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.ORG_PAT_TOKEN }}   # use org‑level PAT
+
 
 
