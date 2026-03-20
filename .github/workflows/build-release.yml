@@ -168,7 +168,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ env.filename }}-${{ matrix.target }}
+          name: artifacts
           path: artifacts/${{ env.filename }}-${{ matrix.target }}.${{ matrix.ext }}
 
   release:
