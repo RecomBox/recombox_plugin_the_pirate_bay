@@ -35,6 +35,24 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Cache rustup toolchains
+        uses: actions/cache@v4
+        with:
+            path: |
+                ~/.rustup
+                ~/.cargo/bin
+            key: rustup-${{ runner.os }}-${{ hashFiles('**/Cargo.lock') }}
+            restore-keys: |
+                rustup-${{ runner.os }}-
+
+
+
+      - name: Cache Rust build
+        uses: Swatinem/rust-cache@v2
+        with:
+            cache-targets: true
+            cache-on-failure: true
+
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
         with:
