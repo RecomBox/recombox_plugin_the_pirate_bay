@@ -248,3 +248,5 @@ jobs:
           file: distfiles/*
           tag: ${{ steps.cargo.outputs.version }}
           overwrite: true
+          file_glob: true
+          draft: true
