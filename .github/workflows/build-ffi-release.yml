@@ -3,7 +3,7 @@ name: Build FFI Library
 on:
   push:
     branches:
-      - main
+      - build-ffi
 
 env:
   filename: lib_the_pirate_bay
