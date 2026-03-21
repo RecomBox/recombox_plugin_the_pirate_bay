@@ -6,7 +6,6 @@ on:
       - main
 
 env:
-  repo: "https://github.com/RecomBox/recombox_plugin_provider"
   filename: lib_the_pirate_bay
   ANDROID_NDK_VERSION: r26d
   ANDROID_API_LEVEL: 21
@@ -210,7 +209,7 @@ jobs:
           sudo apt-get update && sudo apt-get install -y jq
           mkdir -p distfiles
           VERSION="${{ steps.cargo.outputs.version }}"
-          REPO="${{ env.repo }}"
+          REPO="https://github.com/${{ github.repository }}"
           FILENAME="${{ env.filename }}"
 
           JSON=$(jq -n \
@@ -221,7 +220,6 @@ jobs:
             base=$(basename "$file")
             target=$(echo "$base" | sed -E "s/^$FILENAME-(.*)\..*$/\1/")
 
-            # Map to Rust std::env::consts::{OS, ARCH}
             case "$target" in
               x86_64-pc-windows-msvc) os="windows"; arch="x86_64" ;;
               x86_64-unknown-linux-gnu) os="linux"; arch="x86_64" ;;
@@ -246,6 +244,7 @@ jobs:
           done
 
           echo "$JSON" > distfiles/latest.json
+
 
       - name: Upload all build outputs to release
         uses: svenstaro/upload-release-action@v2
