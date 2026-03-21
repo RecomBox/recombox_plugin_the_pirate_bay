@@ -205,46 +205,47 @@ jobs:
           VERSION=$(grep '^version' Cargo.toml | sed -E 's/version = "(.*)"/\1/')
           echo "version=$VERSION" >> $GITHUB_OUTPUT
 
-
-      - name: Generate latest.json metadata
+      - name: Generate latest.json
         run: |
-          # Ensure jq is available
-          sudo apt-get update
-          sudo apt-get install -y jq
+          sudo apt-get update && sudo apt-get install -y jq
+          mkdir -p distfiles
+          VERSION="${{ steps.cargo.outputs.version }}"
+          REPO="${{ env.repo }}"
+          FILENAME="${{ env.filename }}"
 
-          VERSION=${{ steps.cargo.outputs.version }}
-          REPO=${{ env.repo }}
+          JSON=$(jq -n \
+            --arg version "$VERSION" \
+            '{version: $version, releases: {}}')
 
-          # Initialize JSON
-          echo '{ "version": "'$VERSION'", "releases": {} }' > distfiles/latest.json
+          for file in distfiles/*; do
+            base=$(basename "$file")
+            target=$(echo "$base" | sed -E "s/^$FILENAME-(.*)\..*$/\1/")
 
-          for f in distfiles/*; do
-            fname=$(basename "$f")
-            case "$fname" in
-              *windows*) os="windows";;
-              *unknown-linux-gnu*) os="linux";;
-              *apple-darwin*) os="macos";;
-              *apple-ios*) os="ios";;
-              *linux-android*) os="android";;
-              latest.json) continue;;
-              *) os="unknown";;
+            # Map to Rust std::env::consts::{OS, ARCH}
+            case "$target" in
+              x86_64-pc-windows-msvc) os="windows"; arch="x86_64" ;;
+              x86_64-unknown-linux-gnu) os="linux"; arch="x86_64" ;;
+              x86_64-apple-darwin) os="macos"; arch="x86_64" ;;
+              aarch64-apple-darwin) os="macos"; arch="aarch64" ;;
+              aarch64-apple-ios) os="ios"; arch="aarch64" ;;
+              x86_64-apple-ios) os="ios"; arch="x86_64" ;;
+              aarch64-linux-android) os="android"; arch="aarch64" ;;
+              armv7-linux-androideabi) os="android"; arch="arm" ;;
+              i686-linux-android) os="android"; arch="x86" ;;
+              x86_64-linux-android) os="android"; arch="x86_64" ;;
+              *) os="unknown"; arch="unknown" ;;
             esac
 
-            # Extract arch from target triple
-            target=$(echo "$fname" | sed -E 's/.*-(.*)\..*/\1/')
-            arch=$(echo "$target" | cut -d'-' -f1)
+            url="$REPO/releases/download/$VERSION/$base"
 
-            url="$REPO/releases/download/$VERSION/$fname"
-
-            # Insert into JSON safely
-            tmp=$(mktemp)
-            jq --arg os "$os" --arg arch "$arch" --arg url "$url" \
-              '.releases[$os][$arch] = $url' distfiles/latest.json > "$tmp"
-            mv "$tmp" distfiles/latest.json
+            JSON=$(echo "$JSON" | jq \
+              --arg os "$os" \
+              --arg arch "$arch" \
+              --arg url "$url" \
+              '.releases[$os][$arch] = $url')
           done
 
-      
-
+          echo "$JSON" > distfiles/latest.json
 
       - name: Upload all build outputs to release
         uses: svenstaro/upload-release-action@v2
