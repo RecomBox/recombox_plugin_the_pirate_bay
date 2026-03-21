@@ -209,37 +209,36 @@ jobs:
         run: |
           VERSION=${{ steps.cargo.outputs.version }}
           REPO=${{ env.repo }}
-          echo '{' > distfiles/latest.json
-          echo '  "version": "'$VERSION'",' >> distfiles/latest.json
-          echo '  "releases": {' >> distfiles/latest.json
 
-          declare -A osmap
+          # Start JSON
+          echo '{ "version": "'$VERSION'", "releases": {} }' > distfiles/latest.json
+
+          # Build up releases object
           for f in distfiles/*; do
             fname=$(basename "$f")
             case "$fname" in
               *windows*) os="windows";;
-              *linux*)   os="linux";;
-              *darwin*)  os="macos";;
-              *ios*)     os="ios";;
-              *android*) os="android";;
-              *)         os="unknown";;
+              *unknown-linux-gnu*) os="linux";;
+              *apple-darwin*) os="macos";;
+              *apple-ios*) os="ios";;
+              *linux-android*) os="android";;
+              latest.json) continue;;
+              *) os="unknown";;
             esac
-            arch=$(echo "$fname" | cut -d'-' -f2)
+
+            # Extract arch from target triple
+            target=$(echo "$fname" | sed -E 's/.*-(.*)\..*/\1/')
+            arch=$(echo "$target" | cut -d'-' -f1)
+
             url="$REPO/releases/download/$VERSION/$fname"
-            osmap[$os]+='"'$arch'": "'$url'",'
+
+            # Insert into JSON using jq
+            tmp=$(mktemp)
+            jq --arg os "$os" --arg arch "$arch" --arg url "$url" \
+              '.releases[$os][$arch] = $url' distfiles/latest.json > "$tmp"
+            mv "$tmp" distfiles/latest.json
           done
 
-          for os in "${!osmap[@]}"; do
-            echo '    "'$os'": {' >> distfiles/latest.json
-            val=${osmap[$os]}
-            val=${val%,}
-            echo "      $val" >> distfiles/latest.json
-            echo '    },' >> distfiles/latest.json
-          done
-
-          sed -i '$ s/},/}/' distfiles/latest.json
-          echo '  }' >> distfiles/latest.json
-          echo '}' >> distfiles/latest.json
 
       - name: Upload all build outputs to release
         uses: svenstaro/upload-release-action@v2

@@ -1,7 +1,6 @@
 use std::{ffi::{CStr, CString, c_char}, ptr::null_mut};
 use serde_json::{to_string};
-use serde::{Deserialize, Serialize};
-use recombox_plugin_provider::select_source::{InputPayload, OuputPayloadInfo, OuputPayload};
+use recombox_plugin_provider::select_source::{InputPayload};
 
 
 mod anime;
