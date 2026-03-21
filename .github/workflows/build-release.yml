@@ -205,15 +205,19 @@ jobs:
           VERSION=$(grep '^version' Cargo.toml | sed -E 's/version = "(.*)"/\1/')
           echo "version=$VERSION" >> $GITHUB_OUTPUT
 
+
       - name: Generate latest.json metadata
         run: |
+          # Ensure jq is available
+          sudo apt-get update
+          sudo apt-get install -y jq
+
           VERSION=${{ steps.cargo.outputs.version }}
           REPO=${{ env.repo }}
 
-          # Start JSON
+          # Initialize JSON
           echo '{ "version": "'$VERSION'", "releases": {} }' > distfiles/latest.json
 
-          # Build up releases object
           for f in distfiles/*; do
             fname=$(basename "$f")
             case "$fname" in
@@ -232,12 +236,14 @@ jobs:
 
             url="$REPO/releases/download/$VERSION/$fname"
 
-            # Insert into JSON using jq
+            # Insert into JSON safely
             tmp=$(mktemp)
             jq --arg os "$os" --arg arch "$arch" --arg url "$url" \
               '.releases[$os][$arch] = $url' distfiles/latest.json > "$tmp"
             mv "$tmp" distfiles/latest.json
           done
+
+      
 
 
       - name: Upload all build outputs to release
