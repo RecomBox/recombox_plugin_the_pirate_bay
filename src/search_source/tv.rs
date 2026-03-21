@@ -1,5 +1,4 @@
 use reqwest::Client;
-use urlencoding::encode;
 use serde_json::{Value};
 
 
@@ -9,7 +8,7 @@ use recombox_plugin_provider::select_source::{InputPayload, OuputPayloadInfo, Ou
 pub async fn new(input: InputPayload) -> anyhow::Result<OuputPayload>{
     
     let client = Client::new();
-    let res = client.get(format!("https://apibay.org/q.php?q={}&cat=0", encode(&input.title)))
+    let res = client.get(format!("https://apibay.org/q.php?q={}&cat=205", input.id))
         .send()
         .await?;
 

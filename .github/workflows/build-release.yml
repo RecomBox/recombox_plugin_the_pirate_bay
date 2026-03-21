@@ -5,13 +5,14 @@ on:
     branches:
       - main
 
+env:
+  repo: "https://github.com/RecomBox/recombox_plugin_provider"
+  filename: lib_the_pirate_bay
+  ANDROID_NDK_VERSION: r26d
+  ANDROID_API_LEVEL: 21
+
 jobs:
   build:
-    env:
-      filename: lib_the_pirate_bay
-      ANDROID_NDK_VERSION: r26d
-      ANDROID_API_LEVEL: 21
-
     strategy:
       matrix:
         include:
@@ -19,31 +20,43 @@ jobs:
           - target: x86_64-pc-windows-msvc
             ext: dll
             os: windows-latest
+            osname: windows
+            arch: x86_64
 
           # Linux desktop
           - target: x86_64-unknown-linux-gnu
             ext: so
             os: ubuntu-latest
+            osname: linux
+            arch: x86_64
 
           # macOS Intel
           - target: x86_64-apple-darwin
             ext: dylib
             os: macos-latest
+            osname: macos
+            arch: x86_64
 
           # macOS Apple Silicon
           - target: aarch64-apple-darwin
             ext: dylib
             os: macos-latest
+            osname: macos
+            arch: aarch64
 
           # iOS device
           - target: aarch64-apple-ios
             ext: dylib
             os: macos-latest
+            osname: ios
+            arch: aarch64
 
           # iOS simulator
           - target: x86_64-apple-ios
             ext: dylib
             os: macos-latest
+            osname: ios
+            arch: x86_64
 
           # Android arm64
           - target: aarch64-linux-android
@@ -51,6 +64,8 @@ jobs:
             os: ubuntu-latest
             envkey: AARCH64_LINUX_ANDROID
             linker: aarch64-linux-android21-clang
+            osname: android
+            arch: aarch64
 
           # Android armv7
           - target: armv7-linux-androideabi
@@ -58,6 +73,8 @@ jobs:
             os: ubuntu-latest
             envkey: ARMV7_LINUX_ANDROIDEABI
             linker: armv7a-linux-androideabi21-clang
+            osname: android
+            arch: armv7
 
           # Android x86
           - target: i686-linux-android
@@ -65,6 +82,8 @@ jobs:
             os: ubuntu-latest
             envkey: I686_LINUX_ANDROID
             linker: i686-linux-android21-clang
+            osname: android
+            arch: i686
 
           # Android x86_64
           - target: x86_64-linux-android
@@ -72,10 +91,11 @@ jobs:
             os: ubuntu-latest
             envkey: X86_64_LINUX_ANDROID
             linker: x86_64-linux-android21-clang
+            osname: android
+            arch: x86_64
 
     runs-on: ${{ matrix.os }}
     
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -111,18 +131,8 @@ jobs:
         if: contains(matrix.target, 'android')
         run: |
           TOOLCHAIN=${ANDROID_NDK_HOME}/toolchains/llvm/prebuilt/linux-x86_64/bin
-
-          # Cargo environment
           echo "CARGO_TARGET_${{ matrix.envkey }}_AR=$TOOLCHAIN/llvm-ar" >> $GITHUB_ENV
           echo "CARGO_TARGET_${{ matrix.envkey }}_LINKER=$TOOLCHAIN/${{ matrix.linker }}" >> $GITHUB_ENV
-
-          # cc-rs and ring compatibility
-          echo "AR_${{ matrix.target }}=$TOOLCHAIN/llvm-ar" >> $GITHUB_ENV
-          echo "AR_${{ matrix.envkey }}=$TOOLCHAIN/llvm-ar" >> $GITHUB_ENV
-          echo "CC_${{ matrix.target }}=$TOOLCHAIN/${{ matrix.linker }}" >> $GITHUB_ENV
-          echo "CC_${{ matrix.envkey }}=$TOOLCHAIN/${{ matrix.linker }}" >> $GITHUB_ENV
-          echo "TARGET_CC=$TOOLCHAIN/${{ matrix.linker }}" >> $GITHUB_ENV
-          echo "CC=$TOOLCHAIN/${{ matrix.linker }}" >> $GITHUB_ENV
 
       - name: Setup iOS toolchain
         if: contains(matrix.target, 'apple-ios')
@@ -135,35 +145,14 @@ jobs:
           echo "IPHONEOS_DEPLOYMENT_TARGET=12.0" >> $GITHUB_ENV
           echo "MACOSX_DEPLOYMENT_TARGET=11.0" >> $GITHUB_ENV
 
-      - name: Build (Apple)
-        if: contains(matrix.target, 'apple')
+      - name: Build
         run: cargo build --release --target ${{ matrix.target }}
 
-      - name: Build (Android)
-        if: contains(matrix.target, 'android')
-        run: cargo build --release --target ${{ matrix.target }}
-
-      - name: Build (Other)
-        if: "!contains(matrix.target, 'apple') && !contains(matrix.target, 'android')"
-        run: |
-          cargo install cross
-          cross build --release --target ${{ matrix.target }}
-
-      # Rename step for Linux/macOS
-      - name: Rename output (Unix)
-        if: runner.os != 'Windows'
+      - name: Rename output
         shell: bash
         run: |
           mkdir -p artifacts
           cp target/${{ matrix.target }}/release/*.${{ matrix.ext }} artifacts/${{ env.filename }}-${{ matrix.target }}.${{ matrix.ext }}
-
-      # Rename step for Windows
-      - name: Rename output (Windows)
-        if: runner.os == 'Windows'
-        shell: pwsh
-        run: |
-          New-Item -ItemType Directory -Force -Path artifacts
-          Copy-Item "target\${{ matrix.target }}\release\*.${{ matrix.ext }}" "artifacts\${{ env.filename }}-${{ matrix.target }}.${{ matrix.ext }}"
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
@@ -193,16 +182,48 @@ jobs:
           VERSION=$(grep '^version' Cargo.toml | sed -E 's/version = "(.*)"/\1/')
           echo "version=$VERSION" >> $GITHUB_OUTPUT
 
-      # Upload all files from distfiles directory
+      - name: Generate latest.json metadata
+        run: |
+          VERSION=${{ steps.cargo.outputs.version }}
+          REPO=${{ env.repo }}
+          echo '{' > distfiles/latest.json
+          echo '  "version": "'$VERSION'",' >> distfiles/latest.json
+          echo '  "releases": {' >> distfiles/latest.json
+
+          declare -A osmap
+          for f in distfiles/*; do
+            fname=$(basename "$f")
+            case "$fname" in
+              *windows*) os="windows";;
+              *linux*)   os="linux";;
+              *darwin*)  os="macos";;
+              *ios*)     os="ios";;
+              *android*) os="android";;
+              *)         os="unknown";;
+            esac
+            arch=$(echo "$fname" | cut -d'-' -f2)
+            url="$REPO/releases/download/$VERSION/$fname"
+            osmap[$os]+='"'$arch'": "'$url'",'
+          done
+
+          for os in "${!osmap[@]}"; do
+            echo '    "'$os'": {' >> distfiles/latest.json
+            val=${osmap[$os]}
+            val=${val%,}
+            echo "      $val" >> distfiles/latest.json
+            echo '    },' >> distfiles/latest.json
+          done
+
+          sed -i '$ s/},/}/' distfiles/latest.json
+          echo '  }' >> distfiles/latest.json
+          echo '}' >> distfiles/latest.json
+
       - name: Upload all build outputs to release
         uses: svenstaro/upload-release-action@v2
         with:
-          repo_token: ${{ secrets.GITHUB_TOKEN }}      # default token works for upload
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: distfiles/*
           tag: ${{ steps.cargo.outputs.version }}
           overwrite: true
           file_glob: true
           draft: true
-
-
-
